@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<!-- Please do not judge me on my HTML/JS/CSS skills ;) -->
+
+<html>
+<head>
+<meta charset=utf-8 />
+<title>Tristram Gräbener</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<script src='https://code.jquery.com/jquery-2.1.4.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/2.6.7/jquery.fullPage.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/showdown/1.2.1/showdown.min.js'></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.0.1/dist/leaflet.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css?family=Fira+Sans');
+body {
+  margin:0;
+  padding:0;
+  font-family: 'Fira Sans', sans-serif;
+}
+
+  #map {
+    position: absolute;
+    height: 100%;
+    width: 50%;
+  }
+
+  #fullpage {
+    left: 50%;
+    width: 50%;
+  }
+
+  .section {
+    padding: 20px;
+    padding-left: 40px;
+  }
+</style>
+</head>
+<body>
+  <div id='map'></div>
+
+  <div id='fullpage'>
+    <div class='section'
+        data-lon='2.3477'
+        data-lat='48.8547'
+        data-zoom='11'
+        >
+# This is Paris
+
+This is a tour of the fortification and how the shaped the streets.
+
+Press `[space]` or scroll down.
+
+    </div>
+
+      <div class='section'
+        data-lon='2.3477'
+        data-lat='48.8547'
+        data-zoom='14'
+        data-enceinte='romaine'
+        >
+# The roman fortification
+
+On the _Île de la Cité_ were the first walls of Paris.
+
+Built between 308 and 360.
+
+The wester part, was the palace.
+      </div>
+
+      <div class='section'
+        data-lon='2.3477'
+        data-lat='48.8547'
+        data-zoom='14'
+        data-enceinte='carolingienne'
+        >
+# The medieval fortification
+
+Little is known.
+
+It was probably built after the Vinkings’ siege from 885 to 887.
+
+      </div>
+      <div class='section'
+        data-lon='2.3477'
+        data-lat='48.8547'
+        data-zoom='13'
+        data-enceinte='philippeAug'
+        >
+# Philippe-Auguste’s fortification
+
+
+      </div>
+      <div class='section'
+        data-lon='2.36077'
+        data-lat='48.85411'
+        data-zoom='18'
+        data-enceinte='philippeAug'
+        >
+# Philippe-Auguste’s fortification
+
+The largest remainer can be seen near the _collège Charlemagne_.
+
+![Enceinte Philippe Auguste](images/Enceinte_philippe_auguste.jpg =80%x*)
+
+      </div>
+
+      <div class='section'
+        data-lon='2.3477'
+        data-lat='48.8547'
+        data-zoom='13'
+        data-enceinte='charlesV philippeAug'
+        >
+# Charles V
+
+At some point, the right bank of Paris had two walls.
+      </div>
+
+    <div class='section'
+      data-lon='2.3477'
+      data-lat='48.8547'
+      data-zoom='12'
+      data-enceinte='fermiers'
+      >
+# Mur des fermiers généraux
+
+This wall was not a defensive, and its only function was to tax any goods
+entering Paris.
+
+It was highly impopular, and might be one of the triggers of the French
+revolution.
+
+_Le mur murant Paris rend Paris murmurant_
+    </div>
+
+    <div class='section'
+      data-lon='2.39864'
+      data-lat='48.84816'
+      data-zoom='17'
+      data-enceinte='fermiers'
+      >
+# Mur des fermiers généraux
+
+Four of the building used to collect the taxes are still visible.
+
+Here the _Barrière du trône_.
+
+![Colonnes du trone](images/trone.jpg =80%x*)
+</div>
+
+<div class='section'
+  data-lon='2.3693'
+  data-lat='48.8834'
+  data-zoom='17'
+  data-enceinte='fermiers'
+  >
+# Mur des fermiers généraux
+
+Four of the building used to collect the taxes are still visible.
+
+Here the _Barrière de Saint Martin_, known today as
+_Rotonde de la Vilette_.
+
+![Barrière de Saint Martin](images/rotonde.jpg =80%x*)
+</div>
+  </div>
+
+        <script>
+
+var map = L.map('map').setView([48.87, 2.34], 11);
+L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v9/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiY2FwaXRhaW5ldHJhaW4iLCJhIjoiaEQ1TmhidyJ9.R60JWLOIU-dBBwj-9ukJdA', {
+    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+
+var sources = [
+  'romaine.geojson',
+  'carolingienne.geojson',
+  'Charles-V.geojson',
+  'Ferm. généraux.geojson',
+  'fossés jaunes.geojson',
+  'Philippe-Auguste.geojson',
+];
+
+var enceintes;
+var currentLayers = [];
+var layersPromise = sources.map(s => fetch('geojson/' + s).then(resp => resp.json().then(json => L.geoJSON(json))));
+Promise.all(layersPromise).then( (layers) => {
+  enceintes = {
+    romaine:       layers[0],
+    carolingienne: layers[1],
+    charlesV:      layers[2],
+    fermiers:      layers[3],
+    fosses:        layers[4],
+    philippeAug:   layers[5],
+  };
+});
+var data = [];
+
+
+//map.scrollWheelZoom.disable();
+
+
+function nextSlide(index, nextIndex, direction) {
+    var idx = direction == "down" ? index : nextIndex - 1;
+    var d = data[idx];
+
+    if(d.lat && d.lon) {
+        map.flyTo([d.lat, d.lon], d.zoom, { animate: true, pan: {duration: 1}});
+    }
+
+    currentLayers.forEach( l => l.removeFrom(map) );
+    currentLayers = [];
+
+  if(d.enceinte) {
+    d.enceinte.split(" ").forEach((e) => {
+      currentLayers.push(enceintes[e]);
+      enceintes[e].addTo(map);
+    });
+  }
+}
+
+
+$(document).ready(function() {
+  $('#fullpage').fullpage({
+    onLeave: nextSlide
+  });
+
+  var converter = new showdown.Converter();
+  converter.setOption('parseImgDimensions', true);
+  $(".section").each(function(i, s) {
+    $(s).html( converter.makeHtml($(s).text()) );
+    console.log(i, $(s).data("enceinte"));
+    data[i] = {
+      lon: $(s).data("lon"),
+      lat: $(s).data("lat"),
+      zoom: $(s).data("zoom"),
+      enceinte: $(s).data("enceinte")
+    };
+  });
+});
+
+
+        </script>
+</body>
+</html>
