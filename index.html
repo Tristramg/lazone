@@ -164,6 +164,18 @@ _Rotonde de la Vilette_.
 
 ![Barrière de Saint Martin](images/rotonde.jpg =80%x*)
 </div>
+
+<div class='section'
+  data-lon='2.3477'
+  data-lat='48.8547'
+  data-zoom='12'
+  data-enceinte='thiers'
+  >
+# Thiers
+
+This wall was the last one in Paris.
+</div>
+
   </div>
 
         <script>
@@ -181,6 +193,7 @@ var sources = [
   'Ferm. généraux.geojson',
   'fossés jaunes.geojson',
   'Philippe-Auguste.geojson',
+  'thiers.geojson'
 ];
 
 var enceintes;
@@ -194,6 +207,7 @@ Promise.all(layersPromise).then( (layers) => {
     fermiers:      layers[3],
     fosses:        layers[4],
     philippeAug:   layers[5],
+    thiers:        layers[6],
   };
 });
 var data = [];
